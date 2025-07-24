@@ -12,7 +12,9 @@ public class TradeResponse {
     [JsonPropertyName("x")] 
     public required string ExchangeCode {get;set;}
     [JsonPropertyName("p")] 
-    public int Price {get;set;}
+    public decimal Price {get;set;}
+    [JsonPropertyName("s")]
+    public int Size {get;set;}
     [JsonPropertyName("c")] 
     public required IEnumerable<string> Conditions {get;set;}
     [JsonPropertyName("t")] 
