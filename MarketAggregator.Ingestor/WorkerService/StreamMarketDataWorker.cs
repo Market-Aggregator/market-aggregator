@@ -2,14 +2,14 @@ using MarketAggregator.Core.Interfaces;
 
 namespace MarketAggregator.Ingestor.WorkerService;
 
-public class Worker : BackgroundService
+public class StreamMarketDataWorker : BackgroundService
 {
     private readonly ILiveMarketDataClient _marketDataClient;
-    private readonly ILogger<Worker> _logger;
+    private readonly ILogger<StreamMarketDataWorker> _logger;
     // private static readonly string[] Symbols = ["APPL", "MSFT", "GOOG"];
     private static readonly string[] Symbols = ["FAKEPACA"];
 
-    public Worker(ILiveMarketDataClient marketDataClient, ILogger<Worker> logger)
+    public StreamMarketDataWorker(ILiveMarketDataClient marketDataClient, ILogger<StreamMarketDataWorker> logger)
     {
         _marketDataClient = marketDataClient;
         _logger = logger;
