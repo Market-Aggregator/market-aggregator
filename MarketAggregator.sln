@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketAggregator.SharedKern
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketAggregator.Tests", "MarketAggregator.Tests\MarketAggregator.Tests.csproj", "{A7E404DD-15BB-4144-AB70-4D0313EB28F6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MarketAggregator.Ingestor", "MarketAggregator.Ingestor\MarketAggregator.Ingestor.csproj", "{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -83,6 +85,18 @@ Global
 		{A7E404DD-15BB-4144-AB70-4D0313EB28F6}.Release|x64.Build.0 = Release|Any CPU
 		{A7E404DD-15BB-4144-AB70-4D0313EB28F6}.Release|x86.ActiveCfg = Release|Any CPU
 		{A7E404DD-15BB-4144-AB70-4D0313EB28F6}.Release|x86.Build.0 = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|x64.Build.0 = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Debug|x86.Build.0 = Debug|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|x64.ActiveCfg = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|x64.Build.0 = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|x86.ActiveCfg = Release|Any CPU
+		{9DCC93FB-E813-40FC-8B10-C41F4C1A26CC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

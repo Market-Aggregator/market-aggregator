@@ -4,10 +4,14 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>dotnet-MarketAggregator.Ingestor-c43bfd9a-45e2-4fa8-be7b-407ef4a77580</UserSecretsId>
+    <UserSecretsId>dotnet-MarketAggregator.Ingestor-6f60c57e-d57f-44a2-8fad-8059908e768d</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MarketAggregator.Infrastructure\MarketAggregator.Infrastructure.csproj" />
   </ItemGroup>
 </Project>
