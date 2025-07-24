@@ -2,12 +2,13 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
+using MarketAggregator.Core.Entities.ApiEntities;
 using MarketAggregator.Core.Interfaces;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace MarketAggregator.Infrastructure.MarketData;
+namespace MarketAggregator.Infrastructure.Repositories.Adapters;
 
 public class AlpacaWebSocketClient : ILiveMarketDataClient
 {
@@ -22,8 +23,6 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
 
     public async Task ConnectAndStreamAsync(IEnumerable<string> symbols, CancellationToken ct)
     {
-        // Uri uri = new("wss://stream.data.alpaca.markets/v2/iex");
-
         // test stream endpoint available outside market hours
         Uri uri = new("wss://stream.data.alpaca.markets/v2/test");
 
@@ -50,7 +49,7 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
             secret = _configuration["AlpacaMarket:SecretKey"]
         });
         await SendMessageAsync(ws, authPayload, ct);
-        _logger.LogInformation("Sent auth message.");
+        _logger.LogInformation("Auth message sent.");
 
         string authResponse = await ReceiveMessageAsync(ws, ct);
 
@@ -62,36 +61,41 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
             // TODO: maybe throw exception instead
             return;
         }
+        _logger.LogInformation("Auth Success: {AuthMessage}", authResponse);
 
         var subscribePayload = JsonSerializer.Serialize(new
         {
             action = "subscribe",
-            // trades = symbols.ToArray(),
-
-            // test symbol to use with test stream endpoint
-            trades = "[\"FAKEPACCA\"]",
+            trades = symbols.ToArray(),
         });
         await SendMessageAsync(ws, subscribePayload, ct);
+        _logger.LogInformation("Subscribe message sent.");
 
-        byte[] buffer = new byte[8192];
+        string subscribeResponse = await ReceiveMessageAsync(ws, ct);
+        _logger.LogInformation("Subscribe response: {SubscribeResponse}", subscribeResponse);
+
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
-
             // TODO: read ws response, transform to entity, and publish to event stream
+            var update = await ReceiveMessageAsync(ws, ct);
+            _logger.LogInformation("Trade Update Json: {UpdateJson}", update);
+
+            var updateJson = JsonSerializer.Deserialize<List<TradeResponse>>(update);
+            _logger.LogInformation("Trade Update Json Deserialized: {TradeUpdate}", updateJson);
+
         }
     }
 
     private static async Task SendMessageAsync(ClientWebSocket ws, string message, CancellationToken ct)
     {
-        ArraySegment<byte> bytes = new(Encoding.UTF8.GetBytes(message));
-        await ws.SendAsync(bytes, WebSocketMessageType.Text, true, ct);
+        await ws.SendAsync(Encoding.UTF8.GetBytes(message), WebSocketMessageType.Text, true, ct);
     }
 
     // TODO: make this return a strongly-typed response based on AlpacaMarket's message format
     private static async Task<string> ReceiveMessageAsync(ClientWebSocket ws, CancellationToken ct)
     {
         byte[] buffer = new byte[8192];
-        var result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), ct);
+        var result = await ws.ReceiveAsync(buffer, ct);
         return Encoding.UTF8.GetString(buffer, 0, result.Count);
     }
 
