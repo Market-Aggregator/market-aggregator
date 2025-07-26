@@ -2,6 +2,8 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
+using Confluent.Kafka;
+
 using MarketAggregator.Core.Entities;
 using MarketAggregator.Core.Entities.ApiEntities;
 using MarketAggregator.Core.Interfaces;
@@ -100,10 +102,18 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
                 // serialize using .net api temporarily
                 var tradeJson = JsonSerializer.Serialize(stockTradeEntity);
 
-                await _producer.ProduceAsync($"{trade.ExchangeCode}.{trade.Symbol}", trade.Symbol, tradeJson, ct);
-                _logger.LogInformation("Stock Trade Event published to Kafka");
-
+                try
+                {
+                    await _producer.ProduceAsync($"{trade.ExchangeCode}.{trade.Symbol}", trade.Symbol, tradeJson, ct);
+                    _logger.LogInformation("Stock Trade Event published to Kafka");
+                }
+                catch (ProduceException<string, string> e)
+                {
+                    _logger.LogError("Failed to publish Stock Trade Event: {PublishError}", e.Error.Reason);
+                }
             }
+
+            _producer.Flush(ct);
         }
     }
 
