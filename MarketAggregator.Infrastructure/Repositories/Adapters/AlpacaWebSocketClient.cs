@@ -2,6 +2,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 
+using MarketAggregator.Core.Entities;
 using MarketAggregator.Core.Entities.ApiEntities;
 using MarketAggregator.Core.Interfaces;
 
@@ -14,9 +15,11 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<AlpacaWebSocketClient> _logger;
+    private readonly IStockTradeProducer _producer;
 
-    public AlpacaWebSocketClient(IConfiguration configuration, ILogger<AlpacaWebSocketClient> logger)
+    public AlpacaWebSocketClient(IStockTradeProducer producer, IConfiguration configuration, ILogger<AlpacaWebSocketClient> logger)
     {
+        _producer = producer;
         _configuration = configuration;
         _logger = logger;
     }
@@ -24,7 +27,7 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
     public async Task ConnectAndStreamAsync(IEnumerable<string> symbols, CancellationToken ct)
     {
         // test stream endpoint available outside market hours
-        Uri uri = new("wss://stream.data.alpaca.markets/v2/test");
+        Uri uri = new(_configuration["AlpacaMarket:StockWsUrlTest"]!);
 
         using ClientWebSocket ws = new();
         await ws.ConnectAsync(uri, ct);
@@ -55,7 +58,7 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
 
         // TODO: temp - remove later
         string[] requiredAuth = ["success", "authenticated"];
-        if (!requiredAuth.All(kw => authResponse.Contains(kw)))
+        if (!requiredAuth.All(authResponse.Contains))
         {
             _logger.LogError("Authentication Failed {Message}", authResponse);
             // TODO: maybe throw exception instead
@@ -76,13 +79,31 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
 
         while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
-            // TODO: read ws response, transform to entity, and publish to event stream
             var update = await ReceiveMessageAsync(ws, ct);
             _logger.LogInformation("Trade Update Json: {UpdateJson}", update);
 
-            var updateJson = JsonSerializer.Deserialize<List<TradeResponse>>(update);
-            _logger.LogInformation("Trade Update Json Deserialized: {TradeUpdate}", updateJson);
+            var updates = JsonSerializer.Deserialize<List<TradeResponse>>(update);
 
+            foreach (TradeResponse trade in updates)
+            {
+                var stockTradeEntity = new StockTrade
+                {
+                    StockTradeId = trade.TradeId,
+                    Exchange = trade.ExchangeCode,
+                    Symbol = trade.Symbol,
+                    Size = trade.Size,
+                    Price = trade.Price,
+                    Timestamp = trade.Timestamp
+                };
+
+                // TODO: use confluent kafka serializer on ProducerBuilder using kafka schema registry
+                // serialize using .net api temporarily
+                var tradeJson = JsonSerializer.Serialize(stockTradeEntity);
+
+                await _producer.ProduceAsync($"{trade.ExchangeCode}.{trade.Symbol}", trade.Symbol, tradeJson, ct);
+                _logger.LogInformation("Stock Trade Event published to Kafka");
+
+            }
         }
     }
 
@@ -94,6 +115,7 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
     // TODO: make this return a strongly-typed response based on AlpacaMarket's message format
     private static async Task<string> ReceiveMessageAsync(ClientWebSocket ws, CancellationToken ct)
     {
+        // TODO: revisit - buffer might not have to be this big
         byte[] buffer = new byte[8192];
         var result = await ws.ReceiveAsync(buffer, ct);
         return Encoding.UTF8.GetString(buffer, 0, result.Count);

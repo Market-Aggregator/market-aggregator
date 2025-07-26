@@ -25,7 +25,7 @@ public static class IngestorExtensions
                         RetryBackoffMs = 100
                     };
 
-                    return new ProducerBuilder<Null, string>(config).Build();
+                    return new ProducerBuilder<string, string>(config).Build();
                 });
 
         return services;
