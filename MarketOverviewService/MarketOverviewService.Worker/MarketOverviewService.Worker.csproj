@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-MarketOverviewService.Worker-45749650-aac6-413b-8ddc-7a90095942ab</UserSecretsId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MarketOverviewService.Core\MarketOverviewService.Core.csproj" />
+        <ProjectReference
+            Include="..\MarketOverviewService.Infrastructure\MarketOverviewService.Infrastructure.csproj" />
+    </ItemGroup>
+</Project>
