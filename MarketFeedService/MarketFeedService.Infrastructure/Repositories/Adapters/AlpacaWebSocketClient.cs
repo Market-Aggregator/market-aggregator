@@ -99,9 +99,10 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
                 // TODO: use confluent kafka serializer on ProducerBuilder using kafka schema registry
                 // serialize using .net api temporarily
                 var tradeJson = JsonSerializer.Serialize(stockTradeEntity);
+                string topic = $"{trade.ExchangeCode}.{trade.Symbol}";
 
-                await _producer.ProduceAsync($"{trade.ExchangeCode}.{trade.Symbol}", trade.Symbol, tradeJson, ct);
-                _logger.LogInformation("Stock Trade Event published to Kafka");
+                await _producer.ProduceAsync(topic, trade.Symbol, tradeJson, ct);
+                _logger.LogInformation("Stock Trade Event published to Kafka Topic: {Topic}", topic);
             }
 
             _producer.Flush(ct);
