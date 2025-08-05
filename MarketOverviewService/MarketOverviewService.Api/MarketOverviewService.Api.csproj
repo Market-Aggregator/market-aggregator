@@ -10,4 +10,9 @@
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\MarketOverviewService.Core\MarketOverviewService.Core.csproj" />
+    <ProjectReference Include="..\MarketOverviewService.Infrastructure\MarketOverviewService.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
