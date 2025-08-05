@@ -2,8 +2,8 @@ using Confluent.Kafka;
 
 using MarketFeedService.Core.Interfaces;
 using MarketFeedService.Infrastructure.Configuration;
-using MarketFeedService.Infrastructure.Repositories.Adapters;
-using MarketFeedService.Infrastructure.Repositories.Producers;
+using MarketFeedService.Infrastructure.Messaging.Adapters;
+using MarketFeedService.Infrastructure.Messaging.Producers;
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -33,7 +33,7 @@ public static class InfrastructureExtensions
                     return new ProducerBuilder<string, string>(config).Build();
                 });
         services.AddSingleton<IStockTradeProducer, KafkaStockTradeProducer>();
-        services.AddSingleton<ILiveMarketDataClient, AlpacaWebSocketClient>();
+        services.AddSingleton<IMarketDataFeedAdapter, Alpaca>();
 
         return services;
     }

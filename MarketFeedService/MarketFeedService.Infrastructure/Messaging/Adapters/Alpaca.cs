@@ -1,4 +1,5 @@
 using System.Net.WebSockets;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 
@@ -11,40 +12,36 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketFeedService.Infrastructure.Messaging.Adapters;
 
-public class AlpacaWebSocketClient : ILiveMarketDataClient
+public class Alpaca : IMarketDataFeedAdapter
 {
     private readonly IConfiguration _configuration;
-    private readonly ILogger<AlpacaWebSocketClient> _logger;
-    private readonly IStockTradeProducer _producer;
+    private readonly ILogger<Alpaca> _logger;
 
-    public AlpacaWebSocketClient(IStockTradeProducer producer, IConfiguration configuration, ILogger<AlpacaWebSocketClient> logger)
+    public Alpaca(IConfiguration configuration, ILogger<Alpaca> logger)
     {
-        _producer = producer;
         _configuration = configuration;
         _logger = logger;
     }
 
-    public async Task ConnectAndStreamAsync(IEnumerable<string> symbols, CancellationToken ct)
+    // TODO: add error handling and retry connection
+    public async IAsyncEnumerable<StockTrade> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
     {
-        // test stream endpoint available outside market hours
-        Uri uri = new(_configuration["AlpacaMarket:StockWsUrlTest"]!);
-
         using ClientWebSocket ws = new();
-        await ws.ConnectAsync(uri, ct);
-        _logger.LogInformation("AlpacaMarket WebSocket connected");
+        await ws.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrlTest"]!), ct);
 
+        // Wait for "connected" message
         string connectedMsg = await ReceiveMessageAsync(ws, ct);
         if (!connectedMsg.Contains("connected"))
         {
-            _logger.LogError("Failed to connect: {Message}", connectedMsg);
-            return;
+            throw new InvalidOperationException($"Failed to connect to AlpacaMarket: {connectedMsg}");
         }
-        _logger.LogInformation("AlpacaMarket WebSocket awaiting authentication");
+        _logger.LogInformation("AlpacaMarket WebSocket connected");
 
 
         // See the docs for JSON payload structures
         // https://docs.alpaca.markets/docs/streaming-market-data#authentication
 
+        // Authenticate
         var authPayload = JsonSerializer.Serialize(new
         {
             action = "auth",
@@ -52,41 +49,35 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
             secret = _configuration["AlpacaMarket:SecretKey"]
         });
         await SendMessageAsync(ws, authPayload, ct);
-        _logger.LogInformation("Auth message sent.");
 
         string authResponse = await ReceiveMessageAsync(ws, ct);
+        var authResponses = JsonSerializer.Deserialize<List<AuthResponse>>(authResponse);
 
-        // TODO: temp - remove later
-        string[] requiredAuth = ["success", "authenticated"];
-        if (!requiredAuth.All(authResponse.Contains))
+        if (authResponses?.All(r => r.Msg != "authenticated") ?? true)
         {
-            _logger.LogError("Authentication Failed {Message}", authResponse);
-            // TODO: maybe throw exception instead
-            return;
+            throw new UnauthorizedAccessException($"Authentication failed: {authResponse}");
         }
-        _logger.LogInformation("Auth Success: {AuthMessage}", authResponse);
+        _logger.LogInformation("Authentication successful");
 
+        // Subscribe
         var subscribePayload = JsonSerializer.Serialize(new
         {
             action = "subscribe",
             trades = symbols.ToArray(),
         });
         await SendMessageAsync(ws, subscribePayload, ct);
-        _logger.LogInformation("Subscribe message sent.");
-
         string subscribeResponse = await ReceiveMessageAsync(ws, ct);
         _logger.LogInformation("Subscribe response: {SubscribeResponse}", subscribeResponse);
 
-        while (!ct.IsCancellationRequested && ws.State == WebSocketState.Open)
+        // Stream messages
+        while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
         {
             var update = await ReceiveMessageAsync(ws, ct);
-            _logger.LogInformation("Trade Update Json: {UpdateJson}", update);
-
             var updates = JsonSerializer.Deserialize<List<TradeResponse>>(update);
 
-            foreach (TradeResponse trade in updates)
+            foreach (var trade in updates ?? Enumerable.Empty<TradeResponse>())
             {
-                var stockTradeEntity = new StockTrade
+                yield return new StockTrade
                 {
                     StockTradeId = trade.TradeId,
                     Exchange = trade.ExchangeCode,
@@ -95,17 +86,7 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
                     Price = trade.Price,
                     Timestamp = trade.Timestamp
                 };
-
-                // TODO: use confluent kafka serializer on ProducerBuilder using kafka schema registry
-                // serialize using .net api temporarily
-                var tradeJson = JsonSerializer.Serialize(stockTradeEntity);
-                string topic = $"{trade.ExchangeCode}.{trade.Symbol}";
-
-                await _producer.ProduceAsync(topic, trade.Symbol, tradeJson, ct);
-                _logger.LogInformation("Stock Trade Event published to Kafka Topic: {Topic}", topic);
             }
-
-            _producer.Flush(ct);
         }
     }
 
@@ -114,11 +95,9 @@ public class AlpacaWebSocketClient : ILiveMarketDataClient
         await ws.SendAsync(Encoding.UTF8.GetBytes(message), WebSocketMessageType.Text, true, ct);
     }
 
-    // TODO: make this return a strongly-typed response based on AlpacaMarket's message format
     private static async Task<string> ReceiveMessageAsync(ClientWebSocket ws, CancellationToken ct)
     {
-        // TODO: revisit - buffer might not have to be this big
-        byte[] buffer = new byte[8192];
+        byte[] buffer = new byte[1024 * 4];
         var result = await ws.ReceiveAsync(buffer, ct);
         return Encoding.UTF8.GetString(buffer, 0, result.Count);
     }
