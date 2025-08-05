@@ -6,9 +6,9 @@ public class AlpacaMarketConsumerWorker : BackgroundService
 {
     private readonly IPublisher _publisher;
     private readonly ILogger<AlpacaMarketConsumerWorker> _logger;
-    private readonly ILiveMarketDataConsumer _marketDataConsumer;
+    private readonly IMarketDataConsumer _marketDataConsumer;
 
-    public AlpacaMarketConsumerWorker(IPublisher publisher, ILiveMarketDataConsumer marketDataConsumer, ILogger<AlpacaMarketConsumerWorker> logger)
+    public AlpacaMarketConsumerWorker(IPublisher publisher, IMarketDataConsumer marketDataConsumer, ILogger<AlpacaMarketConsumerWorker> logger)
     {
         _publisher = publisher;
         _marketDataConsumer = marketDataConsumer;
@@ -22,12 +22,9 @@ public class AlpacaMarketConsumerWorker : BackgroundService
             _logger.LogInformation("AlpacaMarket Consumer Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        while (!stoppingToken.IsCancellationRequested)
+        await foreach (var trade in _marketDataConsumer.ConsumeAsync("N", stoppingToken))
         {
-            var stockTrade = await _marketDataConsumer.ConsumeAsync(stoppingToken);
-            if (stockTrade is not null) {
-                await _publisher.BroadcastTradeAsync(stockTrade);
-            }
+            await _publisher.BroadcastTradeAsync(trade);
         }
     }
 }

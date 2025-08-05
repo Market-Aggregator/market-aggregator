@@ -12,7 +12,7 @@ public static class InfrastructureExtensions
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
-        services.AddSingleton<ILiveMarketDataConsumer, KafkaStockTradeConsumer>();
+        services.AddSingleton<IMarketDataConsumer, KafkaStockTradeConsumer>();
 
         return services;
     }

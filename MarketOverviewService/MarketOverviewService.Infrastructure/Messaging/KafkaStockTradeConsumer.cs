@@ -1,4 +1,4 @@
-
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 
 using Confluent.Kafka;
@@ -12,7 +12,7 @@ using Microsoft.Extensions.Options;
 
 namespace MarketOverviewService.Infrastructure.Messaging;
 
-public class KafkaStockTradeConsumer : ILiveMarketDataConsumer
+public class KafkaStockTradeConsumer : IMarketDataConsumer
 {
     private readonly ILogger<KafkaStockTradeConsumer> _logger;
     private readonly KafkaSettings _kafkaSettings;
@@ -33,28 +33,24 @@ public class KafkaStockTradeConsumer : ILiveMarketDataConsumer
         _consumer = new ConsumerBuilder<string, string>(config).Build();
     }
 
-    public async Task<StockTrade?> ConsumeAsync(CancellationToken ct)
+    public async IAsyncEnumerable<StockTrade> ConsumeAsync(string exchange, [EnumeratorCancellation] CancellationToken ct)
     {
+        _consumer.Subscribe(exchange);
+        _logger.LogInformation("Kafka Consumer started and subscribed to topic: {Topioc}", exchange);
 
-        await Task.Yield();
-
-        // TODO: remove hardcoded topic
-        string topic = "N.FAKEPACA";
-        _consumer.Subscribe(topic);
-        _logger.LogInformation("Kafka Consumer started and subscribed to topic: {Topic}", topic);
-
-        var result = _consumer.Consume(ct);
-        if (result is null || string.IsNullOrWhiteSpace(result.Message?.Value)) return null;
-
-        var stockTrade = JsonSerializer.Deserialize<StockTrade>(result.Message.Value);
-
-        if (stockTrade is null)
+        while (!ct.IsCancellationRequested)
         {
-            _logger.LogWarning("Receied null or malformed stock trade event");
-            return null;
-        }
+            var result = _consumer.Consume(ct);
+            if (result is null || string.IsNullOrWhiteSpace(result.Message?.Value)) continue;
 
-        _logger.LogInformation("Stock Trade received: {StockTradeSymbol} {StockTradeId} at {StockTradeTimestamp}", stockTrade.Symbol, stockTrade.StockTradeId, stockTrade.Timestamp);
-        return stockTrade;
+            var stockTrade = JsonSerializer.Deserialize<StockTrade>(result.Message.Value);
+
+            if (stockTrade is not null)
+            {
+                yield return stockTrade;
+            }
+
+            await Task.Yield();
+        }
     }
 }
