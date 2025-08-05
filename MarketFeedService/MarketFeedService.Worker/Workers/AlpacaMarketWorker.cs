@@ -29,10 +29,10 @@ public class AlpacaMarketWorker : BackgroundService
         await foreach (var trade in _marketClient.StreamAsync(Symbols, stoppingToken))
         {
             var tradeJson = JsonSerializer.Serialize(trade);
-            var topic = $"{trade.Exchange}.{trade.Symbol}";
 
-            await _producer.ProduceAsync(topic, trade.Symbol, tradeJson, stoppingToken);
-            _logger.LogInformation("Produced trade ({Trade}) to Kafka Topic: {Topic}", tradeJson, topic);
+            // One topic per exchange, using Symbol as the Key ensures same symbol goes to same partition within the topic
+            await _producer.ProduceAsync(trade.Exchange, trade.Symbol, tradeJson, stoppingToken);
+            _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", trade.Exchange);
         }
 
         _producer.Flush(stoppingToken);
