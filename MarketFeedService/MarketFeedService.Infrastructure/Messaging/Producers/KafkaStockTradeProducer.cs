@@ -2,7 +2,7 @@ using Confluent.Kafka;
 
 using MarketFeedService.Core.Interfaces;
 
-namespace MarketFeedService.Infrastructure.Repositories.Producers;
+namespace MarketFeedService.Infrastructure.Messaging.Producers;
 
 public class KafkaStockTradeProducer : IStockTradeProducer
 {

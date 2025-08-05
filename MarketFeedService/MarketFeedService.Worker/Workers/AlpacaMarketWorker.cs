@@ -1,4 +1,3 @@
-
 using MarketFeedService.Core.Interfaces;
 
 namespace MarketFeedService.Worker.Workers;

@@ -9,7 +9,7 @@ using MarketFeedService.Core.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace MarketFeedService.Infrastructure.Repositories.Adapters;
+namespace MarketFeedService.Infrastructure.Messaging.Adapters;
 
 public class AlpacaWebSocketClient : ILiveMarketDataClient
 {
