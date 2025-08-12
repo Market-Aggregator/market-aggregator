@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace MarketFeedService.Core.Entities.ApiEntities;
 
-public class TradeResponse {
+public sealed class TradeResponse {
     [JsonPropertyName("T")] 
     public required string Type {get;set;}
     [JsonPropertyName("S")] 

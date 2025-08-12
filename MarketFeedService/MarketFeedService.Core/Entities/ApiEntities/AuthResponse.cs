@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace MarketFeedService.Core.Entities.ApiEntities;
 
-public class AuthResponse
+public sealed class AuthResponse
 {
     [JsonPropertyName("T")]
     public required string Type { get; set; }
