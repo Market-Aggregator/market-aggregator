@@ -33,17 +33,17 @@ public class KafkaStockTradeConsumer : IMarketDataConsumer
         _consumer = new ConsumerBuilder<string, string>(config).Build();
     }
 
-    public async IAsyncEnumerable<StockTrade> ConsumeAsync(string exchange, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<StockTradeMessage> ConsumeAsync(string exchange, [EnumeratorCancellation] CancellationToken ct)
     {
         _consumer.Subscribe(exchange);
-        _logger.LogInformation("Kafka Consumer started and subscribed to topic: {Topioc}", exchange);
+        _logger.LogInformation("Kafka Consumer started and subscribed to topic: {Topic}", exchange);
 
         while (!ct.IsCancellationRequested)
         {
             var result = _consumer.Consume(ct);
             if (result is null || string.IsNullOrWhiteSpace(result.Message?.Value)) continue;
 
-            var stockTrade = JsonSerializer.Deserialize<StockTrade>(result.Message.Value);
+            var stockTrade = JsonSerializer.Deserialize<StockTradeMessage>(result.Message.Value);
 
             if (stockTrade is not null)
             {

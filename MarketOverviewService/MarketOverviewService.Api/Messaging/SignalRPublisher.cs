@@ -17,9 +17,9 @@ public class SignalRPublisher : IPublisher
         _logger = logger;
     }
 
-    public async Task BroadcastTradeAsync(StockTrade trade)
+    public async Task BroadcastTradeAsync(StockTradeMessage trade)
     {
-        var group = $"{trade.Exchange}.{trade.Symbol}";
+        var group = $"{trade.ExchangeCode}.{trade.Symbol}";
         await _hubContext.Clients.Group(group).SendAsync("ReceiveTradeUpdate", trade);
         _logger.LogInformation("SignalRPublisher broadcasted message to group: {Group}", group);
     }

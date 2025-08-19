@@ -4,7 +4,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MarketOverviewService.Infrastructure.MarketOverviewService.Infrastructure.Persistence.Migrations
+namespace MarketOverviewService.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -16,17 +16,18 @@ namespace MarketOverviewService.Infrastructure.MarketOverviewService.Infrastruct
                 name: "StockTrades",
                 columns: table => new
                 {
-                    StockTradeId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    StockTradeId = table.Column<long>(type: "bigint", nullable: false),
                     Symbol = table.Column<string>(type: "text", nullable: false),
-                    Exchange = table.Column<string>(type: "text", nullable: false),
+                    ExchangeCode = table.Column<string>(type: "text", nullable: false),
                     Price = table.Column<decimal>(type: "numeric", nullable: false),
-                    Size = table.Column<int>(type: "integer", nullable: false),
+                    Size = table.Column<long>(type: "bigint", nullable: false),
                     Timestamp = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_StockTrades", x => x.StockTradeId);
+                    table.PrimaryKey("PK_StockTrades", x => x.Id);
                 });
         }
 

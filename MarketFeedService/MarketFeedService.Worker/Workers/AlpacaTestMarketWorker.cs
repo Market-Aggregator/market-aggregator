@@ -11,7 +11,7 @@ public class AlpacaTestMarketWorker : BackgroundService
     private readonly ILogger<AlpacaMarketWorker> _logger;
     private static readonly string[] Symbols = ["FAKEPACA"];
 
-    public AlpacaTestMarketWorker(IMarketDataFeedAdapter marketDataFeedAdapter, IStockTradeProducer producer, ILogger<AlpacaMarketWorker> logger)
+    public AlpacaTestMarketWorker([FromKeyedServices("alpacatest")] IMarketDataFeedAdapter marketDataFeedAdapter, IStockTradeProducer producer, ILogger<AlpacaMarketWorker> logger)
     {
         _marketClient = marketDataFeedAdapter;
         _producer = producer;
@@ -30,8 +30,7 @@ public class AlpacaTestMarketWorker : BackgroundService
             var tradeJson = JsonSerializer.Serialize(trade);
 
             // One topic per exchange, using Symbol as the Key ensures same symbol goes to same partition within the topic
-            await _producer.ProduceAsync(trade.Exchange, trade.Symbol, tradeJson, stoppingToken);
-            _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", trade.Exchange);
+            await _producer.ProduceAsync(trade.ExchangeCode, trade.Symbol, tradeJson, stoppingToken);
         }
 
         _producer.Flush(stoppingToken);

@@ -33,7 +33,8 @@ public static class InfrastructureExtensions
                     return new ProducerBuilder<string, string>(config).Build();
                 });
         services.AddSingleton<IStockTradeProducer, KafkaStockTradeProducer>();
-        services.AddSingleton<IMarketDataFeedAdapter, Alpaca>();
+        services.AddKeyedSingleton<IMarketDataFeedAdapter, Alpaca>("alpaca");
+        services.AddKeyedSingleton<IMarketDataFeedAdapter, AlpacaTest>("alpacatest");
 
         return services;
     }

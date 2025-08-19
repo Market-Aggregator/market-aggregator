@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace MarketOverviewService.Infrastructure.MarketOverviewService.Infrastructure.Persistence.Migrations
+namespace MarketOverviewService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     partial class AppDbContextModelSnapshot : ModelSnapshot
@@ -24,21 +24,24 @@ namespace MarketOverviewService.Infrastructure.MarketOverviewService.Infrastruct
 
             modelBuilder.Entity("MarketOverviewService.Core.Entities.StockTrade", b =>
                 {
-                    b.Property<int>("StockTradeId")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
+                        .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("StockTradeId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
-                    b.Property<string>("Exchange")
+                    b.Property<string>("ExchangeCode")
                         .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("Size")
-                        .HasColumnType("integer");
+                    b.Property<long>("Size")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("StockTradeId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Symbol")
                         .IsRequired()
@@ -47,7 +50,7 @@ namespace MarketOverviewService.Infrastructure.MarketOverviewService.Infrastruct
                     b.Property<DateTimeOffset>("Timestamp")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("StockTradeId");
+                    b.HasKey("Id");
 
                     b.ToTable("StockTrades");
                 });

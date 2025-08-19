@@ -22,7 +22,7 @@ builder.Services.AddSignalR();
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHostedService<AlpacaMarketConsumerWorker>();
-builder.Services.AddHostedService<AlpacaTestMarketConsumerWorker>();
+// builder.Services.AddHostedService<AlpacaTestMarketConsumerWorker>();
 
 builder.Services.AddSingleton<IPublisher, SignalRPublisher>();
 

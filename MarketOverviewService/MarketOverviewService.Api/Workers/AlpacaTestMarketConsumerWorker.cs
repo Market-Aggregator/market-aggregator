@@ -1,4 +1,5 @@
 
+using MarketOverviewService.Api.Mappers;
 using MarketOverviewService.Core.Interfaces;
 
 namespace MarketOverviewService.Api.Workers;
@@ -30,7 +31,7 @@ public class AlpacaTestMarketConsumerWorker : BackgroundService
             _logger.LogInformation("AlpacaMarket Consumer Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        await foreach (var trade in _marketDataConsumer.ConsumeAsync("V", stoppingToken))
+        await foreach (var trade in _marketDataConsumer.ConsumeAsync("N", stoppingToken))
         {
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             IStockTradeRepository stockTradeRepo = scope.ServiceProvider.GetRequiredService<IStockTradeRepository>();
@@ -39,7 +40,7 @@ public class AlpacaTestMarketConsumerWorker : BackgroundService
 
             // TODO: enqueue to in-memory queue (using channels) to persist asynchronously
             // so that we don't block streaming of trades to clients
-            await stockTradeRepo.CreateAsync(trade);
+            await stockTradeRepo.CreateAsync(trade.ToEntity());
         }
     }
 }

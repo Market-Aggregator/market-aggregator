@@ -24,10 +24,10 @@ public class Alpaca : IMarketDataFeedAdapter
     }
 
     // TODO: add error handling and retry connection
-    public async IAsyncEnumerable<StockTrade> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<StockTradeMessage> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
     {
         using ClientWebSocket ws = new();
-        await ws.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrlTest"]!), ct);
+        await ws.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrl"]!), ct);
 
         // Wait for "connected" message
         string connectedMsg = await ReceiveMessageAsync(ws, ct);
@@ -51,13 +51,13 @@ public class Alpaca : IMarketDataFeedAdapter
         await SendMessageAsync(ws, authPayload, ct);
 
         string authResponse = await ReceiveMessageAsync(ws, ct);
-        var authResponses = JsonSerializer.Deserialize<List<AuthResponse>>(authResponse);
+        var authResponses = JsonSerializer.Deserialize<List<AlpacaMarketAuthResponse>>(authResponse);
 
         if (authResponses?.All(r => r.Msg != "authenticated") ?? true)
         {
             throw new UnauthorizedAccessException($"Authentication failed: {authResponse}");
         }
-        _logger.LogInformation("Authentication successful");
+        _logger.LogInformation("Auth Response: {AuthResponse}", authResponses);
 
         // Subscribe
         var subscribePayload = JsonSerializer.Serialize(new
@@ -65,6 +65,7 @@ public class Alpaca : IMarketDataFeedAdapter
             action = "subscribe",
             trades = symbols.ToArray(),
         });
+        _logger.LogInformation("Subscribe Message Payload: {SubscribeMessagePayload}", subscribePayload);
         await SendMessageAsync(ws, subscribePayload, ct);
         string subscribeResponse = await ReceiveMessageAsync(ws, ct);
         _logger.LogInformation("Subscribe response: {SubscribeResponse}", subscribeResponse);
@@ -73,14 +74,15 @@ public class Alpaca : IMarketDataFeedAdapter
         while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
         {
             var update = await ReceiveMessageAsync(ws, ct);
-            var updates = JsonSerializer.Deserialize<List<TradeResponse>>(update);
+            _logger.LogInformation("Trade Json: {TradeJson}", update);
+            var updates = JsonSerializer.Deserialize<List<AlpacaMarketTradeResponse>>(update);
 
-            foreach (var trade in updates ?? Enumerable.Empty<TradeResponse>())
+            foreach (var trade in updates ?? Enumerable.Empty<AlpacaMarketTradeResponse>())
             {
-                yield return new StockTrade
+                yield return new StockTradeMessage
                 {
                     StockTradeId = trade.TradeId,
-                    Exchange = trade.ExchangeCode,
+                    ExchangeCode = trade.ExchangeCode,
                     Symbol = trade.Symbol,
                     Size = trade.Size,
                     Price = trade.Price,

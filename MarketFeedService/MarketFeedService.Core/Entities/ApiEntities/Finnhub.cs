@@ -4,7 +4,7 @@ namespace MarketFeedService.Core.Entities.ApiEntities;
 
 public sealed class FinnhubTrade {
     [JsonPropertyName("data")]
-    public IEnumerable<FinnhubTradeData>? Data {get;set;}
+    public IEnumerable<FinnhubTradeData?> Data {get;set;}
 
     [JsonPropertyName("type")]
     public required string Type {get;set;}

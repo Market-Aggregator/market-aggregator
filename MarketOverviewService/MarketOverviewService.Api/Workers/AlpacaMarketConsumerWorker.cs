@@ -1,3 +1,4 @@
+using MarketOverviewService.Api.Mappers;
 using MarketOverviewService.Core.Interfaces;
 
 namespace MarketOverviewService.Api.Workers;
@@ -38,7 +39,7 @@ public class AlpacaMarketConsumerWorker : BackgroundService
 
             // TODO: enqueue to in-memory queue (using channels) to persist asynchronously
             // so that we don't block streaming of trades to clients
-            await stockTradeRepo.CreateAsync(trade);
+            await stockTradeRepo.CreateAsync(trade.ToEntity());
         }
     }
 }

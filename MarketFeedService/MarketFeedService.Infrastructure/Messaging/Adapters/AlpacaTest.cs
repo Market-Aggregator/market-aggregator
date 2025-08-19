@@ -24,7 +24,7 @@ public class AlpacaTest : IMarketDataFeedAdapter
     }
 
     // TODO: add error handling and retry connection
-    public async IAsyncEnumerable<StockTrade> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<StockTradeMessage> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
     {
         using ClientWebSocket ws = new();
         await ws.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrlTest"]!), ct);
@@ -51,7 +51,7 @@ public class AlpacaTest : IMarketDataFeedAdapter
         await SendMessageAsync(ws, authPayload, ct);
 
         string authResponse = await ReceiveMessageAsync(ws, ct);
-        var authResponses = JsonSerializer.Deserialize<List<AuthResponse>>(authResponse);
+        var authResponses = JsonSerializer.Deserialize<List<AlpacaMarketAuthResponse>>(authResponse);
 
         if (authResponses?.All(r => r.Msg != "authenticated") ?? true)
         {
@@ -74,14 +74,14 @@ public class AlpacaTest : IMarketDataFeedAdapter
         {
             var update = await ReceiveMessageAsync(ws, ct);
             _logger.LogInformation("Trade Json: {TradeJson}", update);
-            var updates = JsonSerializer.Deserialize<List<TradeResponse>>(update);
+            var updates = JsonSerializer.Deserialize<List<AlpacaMarketTradeResponse>>(update);
 
-            foreach (var trade in updates ?? Enumerable.Empty<TradeResponse>())
+            foreach (var trade in updates ?? Enumerable.Empty<AlpacaMarketTradeResponse>())
             {
-                yield return new StockTrade
+                yield return new StockTradeMessage
                 {
                     StockTradeId = trade.TradeId,
-                    Exchange = trade.ExchangeCode,
+                    ExchangeCode = trade.ExchangeCode,
                     Symbol = trade.Symbol,
                     Size = trade.Size,
                     Price = trade.Price,
