@@ -35,6 +35,7 @@ public static class InfrastructureExtensions
         services.AddSingleton<IStockTradeProducer, KafkaStockTradeProducer>();
         services.AddKeyedSingleton<IMarketDataFeedAdapter, Alpaca>("alpaca");
         services.AddKeyedSingleton<IMarketDataFeedAdapter, AlpacaTest>("alpacatest");
+        services.AddKeyedSingleton<IMarketDataFeedAdapter, YahooFinance>("yahoofinance");
 
         return services;
     }
