@@ -31,6 +31,41 @@ public sealed record AlpacaMarketTradeResponse {
     public required string Tape {get;set;}
 }
 
+public sealed record AlpacaMarketQuoteResponse {
+    [JsonPropertyName("T")] 
+    public required string Type {get;set;}
+
+    [JsonPropertyName("S")] 
+    public required string Symbol {get;set;}
+
+    [JsonPropertyName("ax")] 
+    public required string AskExchangeCode {get;set;}
+
+    [JsonPropertyName("ap")] 
+    public decimal AskPrice {get;set;}
+
+    [JsonPropertyName("as")]
+    public long AskSize {get;set;}
+
+    [JsonPropertyName("abx")] 
+    public required string BidExchangeCode {get;set;}
+
+    [JsonPropertyName("bp")] 
+    public decimal BidPrice {get;set;}
+
+    [JsonPropertyName("bs")]
+    public long BidSize {get;set;}
+
+    [JsonPropertyName("c")] 
+    public required IEnumerable<string> Conditions {get;set;}
+
+    [JsonPropertyName("t")] 
+    public DateTimeOffset Timestamp {get;set;}
+
+    [JsonPropertyName("z")] 
+    public required string Tape {get;set;}
+}
+
 public sealed class AlpacaMarketAuthResponse
 {
     [JsonPropertyName("T")]
