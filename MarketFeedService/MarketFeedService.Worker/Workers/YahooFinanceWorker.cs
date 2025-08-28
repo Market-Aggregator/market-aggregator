@@ -1,5 +1,7 @@
 using System.Text.Json;
 
+using MarketFeedService.Core.Entities.DataEntities;
+using MarketFeedService.Core.Entities.Enums;
 using MarketFeedService.Core.Interfaces;
 
 namespace MarketFeedService.Worker.Workers;
@@ -25,13 +27,26 @@ public class YahooFinanceWorker : BackgroundService
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        await foreach (var trade in _marketClient.StreamAsync(Symbols, stoppingToken))
+        await foreach (var ev in _marketClient.StreamAsync(
+                    Symbols,
+                    MarketFeeds.Trades | MarketFeeds.Quotes,
+                    stoppingToken))
         {
-            var tradeJson = JsonSerializer.Serialize(trade);
+            var eventJson = JsonSerializer.Serialize(ev);
 
             // One topic per exchange, using Symbol as the Key ensures same symbol goes to same partition within the topic
-            await _producer.ProduceAsync(trade.ExchangeCode, trade.Symbol, tradeJson, stoppingToken);
-            _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", trade.ExchangeCode);
+            switch (ev)
+            {
+                case StockTradeMessage trade:
+                    string topic = $"{MarketEvents.Trade}.{trade.ExchangeCode}";
+                    await _producer.ProduceAsync(topic, trade.Symbol, eventJson, stoppingToken);
+                    _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", trade.ExchangeCode);
+                    break;
+                case StockQuoteMessage quote:
+                    await _producer.ProduceAsync(MarketEvents.Quote.ToString(), quote.Symbol, eventJson, stoppingToken);
+                    _logger.LogInformation("Produced quote event to Kafka topic: {Topic}", MarketEvents.Quote);
+                    break;
+            }
         }
 
         _producer.Flush(stoppingToken);
