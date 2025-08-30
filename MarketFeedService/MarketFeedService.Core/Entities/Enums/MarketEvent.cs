@@ -1,15 +1,17 @@
 namespace MarketFeedService.Core.Entities.Enums;
 
-public enum MarketEvents {
+public enum MarketEvents
+{
     Trade,
     Quote,
     Bar
 }
 
 [Flags]
-public enum MarketFeeds {
-    None = 0,
-    Trades = 1,
-    Quotes = 2,
-    Bars = 3
+public enum MarketFeeds
+{
+    None    = 0,
+    Trades  = 1 << 0,
+    Quotes  = 1 << 1,
+    Bars    = 1 << 2,
 }
