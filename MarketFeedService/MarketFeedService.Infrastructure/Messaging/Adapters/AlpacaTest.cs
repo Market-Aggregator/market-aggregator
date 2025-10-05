@@ -26,10 +26,7 @@ public sealed class AlpacaTest : IMarketDataFeedAdapter, IAsyncDisposable
     }
 
     // TODO: add error handling and retry connection
-    public async IAsyncEnumerable<MarketEvent> StreamAsync(
-            IEnumerable<string> symbols,
-            MarketFeeds feeds,
-            [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<MarketEvent> StreamAsync([EnumeratorCancellation] CancellationToken ct)
     {
         // See the docs for JSON payload structures
         // https://docs.alpaca.markets/docs/streaming-market-data#authentication
@@ -140,7 +137,6 @@ public sealed class AlpacaTest : IMarketDataFeedAdapter, IAsyncDisposable
         }, ct);
 
         string authResponse = await ReceiveAsync(ct);
-        _logger.LogInformation("Auth Response: {authRepsonse}", authResponse);
         var authResponses = JsonSerializer.Deserialize<List<AlpacaMarketAuthResponse>>(authResponse);
 
         if (authResponses?.All(r => r.Msg != "authenticated") ?? true)
@@ -148,10 +144,7 @@ public sealed class AlpacaTest : IMarketDataFeedAdapter, IAsyncDisposable
             throw new UnauthorizedAccessException($"Authentication failed: {authResponse}");
         }
 
-        // foreach (var response in authResponses)
-        // {
-        //     _logger.LogInformation("Auth Response: {response}", response);
-        // }
+        _logger.LogInformation("Auth Response: {response}", authResponses[0]);
     }
 
     public async Task SubscribeAsync(IEnumerable<string> symbols, MarketFeeds feeds, CancellationToken ct)

@@ -5,6 +5,7 @@ using System.Text.Json;
 
 using MarketFeedService.Core.Entities.ApiEntities;
 using MarketFeedService.Core.Entities.DataEntities;
+using MarketFeedService.Core.Entities.Enums;
 using MarketFeedService.Core.Interfaces;
 
 using Microsoft.Extensions.Configuration;
@@ -12,8 +13,9 @@ using Microsoft.Extensions.Logging;
 
 namespace MarketFeedService.Infrastructure.Messaging.Adapters;
 
-public class Alpaca : IMarketDataFeedAdapter
+public sealed class Alpaca : IMarketDataFeedAdapter, IAsyncDisposable
 {
+    private readonly ClientWebSocket _socket = new();
     private readonly IConfiguration _configuration;
     private readonly ILogger<Alpaca> _logger;
 
@@ -24,84 +26,144 @@ public class Alpaca : IMarketDataFeedAdapter
     }
 
     // TODO: add error handling and retry connection
-    public async IAsyncEnumerable<StockTradeMessage> StreamAsync(IEnumerable<string> symbols, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<MarketEvent> StreamAsync([EnumeratorCancellation] CancellationToken ct)
     {
-        using ClientWebSocket ws = new();
-        await ws.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrl"]!), ct);
+        // See the docs for JSON payload structures
+        // https://docs.alpaca.markets/docs/streaming-market-data#authentication
 
-        // Wait for "connected" message
-        string connectedMsg = await ReceiveMessageAsync(ws, ct);
+        // Stream messages
+        while (_socket.State == WebSocketState.Open && !ct.IsCancellationRequested)
+        {
+            var alpacaMessage = await ReceiveAsync(ct);
+
+            var jsonDoc = JsonDocument.Parse(alpacaMessage);
+
+            if (jsonDoc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var elem in jsonDoc.RootElement.EnumerateArray())
+                {
+                    _logger.LogInformation("Json element {jsonElem}", elem);
+                    if (!elem.TryGetProperty("T", out var typeProperty))
+                    {
+                        _logger.LogWarning("Message missing T property: {Message}", elem.GetRawText());
+                        continue;
+                    }
+
+                    var type = typeProperty.ToString();
+
+                    switch (type)
+                    {
+                        case "t":
+                            var trade = elem.Deserialize<AlpacaMarketTradeResponse>();
+                            if (trade is not null)
+                            {
+                                yield return new StockTradeMessage(
+                                        Symbol: trade.Symbol,
+                                        Timestamp: trade.Timestamp,
+                                        Event: MarketEvents.Trade,
+                                        StockTradeId: trade.TradeId,
+                                        ExchangeCode: trade.ExchangeCode,
+                                        Price: trade.Price,
+                                        Size: trade.Size,
+                                        Currency: Currency.USD
+                                        );
+                            }
+                            break;
+
+                        case "q":
+                            var quote = elem.Deserialize<AlpacaMarketQuoteResponse>();
+                            if (quote is not null)
+                            {
+                                yield return new StockQuoteMessage(
+                                        Symbol: quote.Symbol,
+                                        Timestamp: quote.Timestamp,
+                                        Event: MarketEvents.Quote,
+                                        AskExchangeCode: quote.AskExchangeCode,
+                                        AskPrice: quote.AskPrice,
+                                        AskSize: quote.AskSize,
+                                        BidExchangeCode: quote.BidExchangeCode,
+                                        BidPrice: quote.BidPrice,
+                                        BidSize: quote.BidSize,
+                                        Currency: Currency.USD
+                                        );
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+    }
+
+    // abstract out into helper functions
+    private async Task SendAsync(object payload, CancellationToken ct)
+    {
+        var json = JsonSerializer.Serialize(payload);
+        await _socket.SendAsync(Encoding.UTF8.GetBytes(json), WebSocketMessageType.Text, true, ct);
+    }
+
+    private async Task<string> ReceiveAsync(CancellationToken ct)
+    {
+        byte[] buffer = new byte[1024 * 4];
+        WebSocketReceiveResult result;
+        var sb = new StringBuilder();
+
+        do
+        {
+            result = await _socket.ReceiveAsync(buffer, ct);
+            sb.Append(Encoding.UTF8.GetString(buffer, 0, result.Count));
+        } while (!result.EndOfMessage);
+
+        return sb.ToString();
+    }
+
+    public async Task ConnectAsync(CancellationToken ct)
+    {
+        await _socket.ConnectAsync(new Uri(_configuration["AlpacaMarket:StockWsUrl"]!), ct);
+        string connectedMsg = await ReceiveAsync(ct);
         if (!connectedMsg.Contains("connected"))
         {
             throw new InvalidOperationException($"Failed to connect to AlpacaMarket: {connectedMsg}");
         }
         _logger.LogInformation("AlpacaMarket WebSocket connected");
+    }
 
-
-        // See the docs for JSON payload structures
-        // https://docs.alpaca.markets/docs/streaming-market-data#authentication
-
-        // Authenticate
-        var authPayload = JsonSerializer.Serialize(new
+    public async Task AuthenticateAsync(CancellationToken ct)
+    {
+        await SendAsync(new
         {
             action = "auth",
             key = _configuration["AlpacaMarket:ApiKey"],
             secret = _configuration["AlpacaMarket:SecretKey"]
-        });
-        await SendMessageAsync(ws, authPayload, ct);
+        }, ct);
 
-        string authResponse = await ReceiveMessageAsync(ws, ct);
+        string authResponse = await ReceiveAsync(ct);
         var authResponses = JsonSerializer.Deserialize<List<AlpacaMarketAuthResponse>>(authResponse);
 
         if (authResponses?.All(r => r.Msg != "authenticated") ?? true)
         {
             throw new UnauthorizedAccessException($"Authentication failed: {authResponse}");
         }
-        _logger.LogInformation("Auth Response: {AuthResponse}", authResponses);
+        _logger.LogInformation("Auth Response: {AuthResponse}", authResponses[0]);
+    }
 
-        // Subscribe
-        var subscribePayload = JsonSerializer.Serialize(new
-        {
-            action = "subscribe",
-            trades = symbols.ToArray(),
-        });
-        _logger.LogInformation("Subscribe Message Payload: {SubscribeMessagePayload}", subscribePayload);
-        await SendMessageAsync(ws, subscribePayload, ct);
-        string subscribeResponse = await ReceiveMessageAsync(ws, ct);
+    public async Task SubscribeAsync(IEnumerable<string> symbols, MarketFeeds feeds, CancellationToken ct)
+    {
+        var trades = (feeds & MarketFeeds.Trades) != 0 ? symbols.ToArray() : Array.Empty<string>();
+        var quotes = (feeds & MarketFeeds.Quotes) != 0 ? symbols.ToArray() : Array.Empty<string>();
+        await SendAsync(new { action = "subscribe", trades, quotes }, ct);
+
+        string subscribeResponse = await ReceiveAsync(ct);
         _logger.LogInformation("Subscribe response: {SubscribeResponse}", subscribeResponse);
-
-        // Stream messages
-        while (ws.State == WebSocketState.Open && !ct.IsCancellationRequested)
-        {
-            var update = await ReceiveMessageAsync(ws, ct);
-            _logger.LogInformation("Trade Json: {TradeJson}", update);
-            var updates = JsonSerializer.Deserialize<List<AlpacaMarketTradeResponse>>(update);
-
-            foreach (var trade in updates ?? Enumerable.Empty<AlpacaMarketTradeResponse>())
-            {
-                yield return new StockTradeMessage
-                {
-                    StockTradeId = trade.TradeId,
-                    ExchangeCode = trade.ExchangeCode,
-                    Symbol = trade.Symbol,
-                    Size = trade.Size,
-                    Price = trade.Price,
-                    Timestamp = trade.Timestamp
-                };
-            }
-        }
     }
 
-    private static async Task SendMessageAsync(ClientWebSocket ws, string message, CancellationToken ct)
+    public async Task CloseAsync(CancellationToken ct)
     {
-        await ws.SendAsync(Encoding.UTF8.GetBytes(message), WebSocketMessageType.Text, true, ct);
+        await _socket.CloseAsync(WebSocketCloseStatus.NormalClosure, "WebSocket Normal Closure", ct);
     }
 
-    private static async Task<string> ReceiveMessageAsync(ClientWebSocket ws, CancellationToken ct)
+    public ValueTask DisposeAsync()
     {
-        byte[] buffer = new byte[1024 * 4];
-        var result = await ws.ReceiveAsync(buffer, ct);
-        return Encoding.UTF8.GetString(buffer, 0, result.Count);
+        _socket.Dispose();
+        return ValueTask.CompletedTask;
     }
-
 }

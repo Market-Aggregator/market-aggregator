@@ -29,10 +29,11 @@ public class AlpacaMarketWorker : BackgroundService
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        await foreach (var ev in _marketClient.StreamAsync(
-                    Symbols,
-                    MarketFeeds.Trades | MarketFeeds.Quotes,
-                    stoppingToken))
+        await _marketClient.ConnectAsync(stoppingToken);
+        await _marketClient.AuthenticateAsync(stoppingToken);
+        await _marketClient.SubscribeAsync(Symbols, MarketFeeds.Quotes | MarketFeeds.Trades, stoppingToken);
+
+        await foreach (var ev in _marketClient.StreamAsync(stoppingToken))
         {
             var eventJson = JsonSerializer.Serialize(ev);
 

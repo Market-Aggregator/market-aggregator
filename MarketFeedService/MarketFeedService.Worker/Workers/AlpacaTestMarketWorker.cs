@@ -31,10 +31,7 @@ public class AlpacaTestMarketWorker : BackgroundService
         await _marketClient.AuthenticateAsync(stoppingToken);
         await _marketClient.SubscribeAsync(Symbols, MarketFeeds.Quotes | MarketFeeds.Trades, stoppingToken);
 
-        await foreach (var ev in _marketClient.StreamAsync(
-                    Symbols,
-                    MarketFeeds.Trades | MarketFeeds.Quotes,
-                    stoppingToken))
+        await foreach (var ev in _marketClient.StreamAsync(stoppingToken))
         {
             var eventJson = JsonSerializer.Serialize(ev);
 

@@ -27,10 +27,7 @@ public class YahooFinanceWorker : BackgroundService
             _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        await foreach (var ev in _marketClient.StreamAsync(
-                    Symbols,
-                    MarketFeeds.Trades | MarketFeeds.Quotes,
-                    stoppingToken))
+        await foreach (var ev in _marketClient.StreamAsync(stoppingToken))
         {
             var eventJson = JsonSerializer.Serialize(ev);
 

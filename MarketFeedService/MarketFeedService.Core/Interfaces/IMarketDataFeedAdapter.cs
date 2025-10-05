@@ -12,10 +12,7 @@ public interface IMarketDataFeedAdapter
             MarketFeeds feeds,
             CancellationToken ct);
 
-    IAsyncEnumerable<MarketEvent> StreamAsync(
-            IEnumerable<string> symbols,
-            MarketFeeds feeds,
-            CancellationToken ct);
+    IAsyncEnumerable<MarketEvent> StreamAsync(CancellationToken ct);
 
     Task CloseAsync(CancellationToken ct);
 }
