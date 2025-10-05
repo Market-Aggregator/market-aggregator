@@ -47,7 +47,7 @@ public sealed record AlpacaMarketQuoteResponse {
     [JsonPropertyName("as")]
     public long AskSize {get;set;}
 
-    [JsonPropertyName("abx")] 
+    [JsonPropertyName("bx")] 
     public required string BidExchangeCode {get;set;}
 
     [JsonPropertyName("bp")] 
