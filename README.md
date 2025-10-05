@@ -1,19 +1,17 @@
 # Market Aggregator
-#<!-- Improved compatibility of back to top link -->
+A real-time market data aggregation platform built with .NET microservices. The system ingests live stock trades and quotes from multiple providers (e.g., Alpaca API), streams events via Kafka, and persists them into PostgreSQL for querying and visualization. Designed with Clean Architecture principles, the aggregator provides a robust foundation for future extensions into trading engines, backtesting, and analytics.
+<!-- Improved compatibility of back to top link -->
 <a id="readme-top"></a>
 
 <!-- PROJECT LOGO -->
 <br />
-<div align="center">
+<div>
   <!-- <a href="https://github.com/aliffamir/market-aggregator"> -->
   <!--   <img src="public/logo.png" alt="Logo" width="80" height="80"> -->
   <!-- </a> -->
 
 
   <p>
-    A real-time market data aggregation platform built with .NET microservices. The system ingests live stock trades and quotes from multiple providers (e.g., Alpaca API), streams events via Kafka, and persists them into PostgreSQL for querying and visualization. Designed with Clean Architecture principles, the aggregator provides a robust foundation for future extensions into trading engines, backtesting, and analytics.
-    <br />
-    <a href="https://github.com/aliffamir/market-aggregator">View Repository</a>
   </p>
 </div>
 
@@ -21,9 +19,9 @@
 
 ## About The Project
 
-<div display="flex">
- <img src="public/market-aggregator-architecture.png" alt="market aggregator architecture" width="100%" />
-</div>
+<!-- <div display="flex"> -->
+<!--  <img src="public/market-aggregator-architecture.png" alt="market aggregator architecture" width="100%" /> -->
+<!-- </div> -->
 
 The **Market Aggregator** aims to consolidate live financial data into a structured ecosystem of services.  
 It currently consists of:
