@@ -33,9 +33,9 @@ public static class InfrastructureExtensions
                     return new ProducerBuilder<string, string>(config).Build();
                 });
         services.AddSingleton<IStockTradeProducer, KafkaStockTradeProducer>();
-        services.AddKeyedSingleton<IMarketDataFeedAdapter, Alpaca>("alpaca");
+        // services.AddKeyedSingleton<IMarketDataFeedAdapter, Alpaca>("alpaca");
         services.AddKeyedSingleton<IMarketDataFeedAdapter, AlpacaTest>("alpacatest");
-        services.AddKeyedSingleton<IMarketDataFeedAdapter, YahooFinance>("yahoofinance");
+        // services.AddKeyedSingleton<IMarketDataFeedAdapter, YahooFinance>("yahoofinance");
 
         return services;
     }

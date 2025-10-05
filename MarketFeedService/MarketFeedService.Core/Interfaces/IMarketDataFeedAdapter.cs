@@ -5,8 +5,17 @@ namespace MarketFeedService.Core.Interfaces;
 
 public interface IMarketDataFeedAdapter
 {
+    Task ConnectAsync(CancellationToken ct);
+    Task AuthenticateAsync(CancellationToken ct);
+    Task SubscribeAsync(
+            IEnumerable<string> symbols,
+            MarketFeeds feeds,
+            CancellationToken ct);
+
     IAsyncEnumerable<MarketEvent> StreamAsync(
             IEnumerable<string> symbols,
             MarketFeeds feeds,
             CancellationToken ct);
+
+    Task CloseAsync(CancellationToken ct);
 }
