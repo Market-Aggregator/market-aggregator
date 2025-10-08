@@ -2,6 +2,7 @@ using MarketFeedService.Core.Entities.Enums;
 
 namespace MarketFeedService.Core.Entities.DataEntities;
 
+// TODO: this should be abstracted into a shared library for the microservices
 public abstract record MarketEvent(
         string Symbol,
         DateTimeOffset Timestamp,

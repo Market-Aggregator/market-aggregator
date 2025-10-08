@@ -36,11 +36,11 @@ public class AlpacaTestMarketConsumerWorker : BackgroundService
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             IStockTradeRepository stockTradeRepo = scope.ServiceProvider.GetRequiredService<IStockTradeRepository>();
 
-            await _publisher.BroadcastTradeAsync(trade);
+            // await _publisher.BroadcastTradeAsync(trade);
 
             // TODO: enqueue to in-memory queue (using channels) to persist asynchronously
             // so that we don't block streaming of trades to clients
-            await stockTradeRepo.CreateAsync(trade.ToEntity());
+            // await stockTradeRepo.CreateAsync(trade.ToEntity());
         }
     }
 }
