@@ -1,4 +1,3 @@
-
 using MarketOverviewService.Core.Entities;
 using MarketOverviewService.Core.Interfaces;
 using MarketOverviewService.Infrastructure.Persistence.Data;
