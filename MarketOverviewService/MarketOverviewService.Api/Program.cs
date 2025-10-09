@@ -37,6 +37,6 @@ if (app.Environment.IsDevelopment())
 // app.UseHttpsRedirection();
 app.UseCors("AllowFrontendLocalDev");
 
-app.MapHub<MarketHub>("/trades/stock");
+app.MapHub<MarketHub>("/stock");
 
 app.Run();

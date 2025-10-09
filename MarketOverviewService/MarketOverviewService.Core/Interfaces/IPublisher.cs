@@ -4,4 +4,5 @@ namespace MarketOverviewService.Core.Interfaces;
 
 public interface IPublisher {
     Task BroadcastTradeAsync(StockTradeMessage trade);
+    Task BroadcastQuoteAsync(StockQuoteMessage quote);
 }
