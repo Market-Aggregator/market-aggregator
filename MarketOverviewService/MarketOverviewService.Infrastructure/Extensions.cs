@@ -20,6 +20,7 @@ public static class InfrastructureExtensions
                 ))
         );
         services.AddScoped<IStockTradeRepository, EfStockTradeRepository>();
+        services.AddScoped<IStockQuoteRepository, EfStockQuoteRepository>();
 
         services.Configure<KafkaSettings>(configuration.GetSection("Kafka"));
         services.AddSingleton<IMarketDataConsumer, KafkaStockTradeConsumer>();

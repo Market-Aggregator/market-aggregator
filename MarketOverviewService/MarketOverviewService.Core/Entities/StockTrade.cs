@@ -2,7 +2,7 @@ namespace MarketOverviewService.Core.Entities;
 
 public class StockTrade
 {
-    public long Id {get;set;}
+    public Guid Id {get;set;}
     public long StockTradeId {get;set;}
     public required string Symbol {get;set;}
     public required string ExchangeCode {get;set;}

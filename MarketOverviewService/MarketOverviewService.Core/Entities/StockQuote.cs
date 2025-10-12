@@ -4,7 +4,7 @@ namespace MarketOverviewService.Core.Entities;
 
 public class StockQuote
 {
-    public long Id {get;set;}
+    public Guid Id {get;set;}
     // public long StockQuoteId {get;set;}
     public required string Symbol {get;set;}
     public DateTimeOffset Timestamp {get;set;}

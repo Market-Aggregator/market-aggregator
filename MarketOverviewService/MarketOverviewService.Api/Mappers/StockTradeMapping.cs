@@ -8,8 +8,8 @@ public static class StockTradeMapping
     {
         return new StockTrade
         {
-            // StockTradeId = stockTradeMessage.StockTradeId,
-            StockTradeId = Guid.NewGuid(),
+            Id = Guid.NewGuid(),
+            StockTradeId = stockTradeMessage.StockTradeId,
             Symbol = stockTradeMessage.Symbol,
             ExchangeCode = stockTradeMessage.ExchangeCode,
             Price = stockTradeMessage.Price,

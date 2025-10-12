@@ -11,6 +11,7 @@ public class AlpacaMarketConsumerWorker : BackgroundService
     private readonly ILogger<AlpacaMarketConsumerWorker> _logger;
     private readonly IMarketDataConsumer _marketDataConsumer;
     private readonly IServiceScopeFactory _serviceScopeFactory;
+    private readonly List<string> _topics = [];
 
     public AlpacaMarketConsumerWorker(
             IPublisher publisher,
@@ -32,7 +33,7 @@ public class AlpacaMarketConsumerWorker : BackgroundService
             _logger.LogInformation("AlpacaMarket Consumer Worker running at: {time}", DateTimeOffset.Now);
         }
 
-        await foreach (var marketEvent in _marketDataConsumer.ConsumeAsync("V", stoppingToken))
+        await foreach (var marketEvent in _marketDataConsumer.ConsumeAsync(_topics, stoppingToken))
         {
             using IServiceScope scope = _serviceScopeFactory.CreateScope();
             IStockTradeRepository stockTradeRepo = scope.ServiceProvider.GetRequiredService<IStockTradeRepository>();
@@ -45,7 +46,7 @@ public class AlpacaMarketConsumerWorker : BackgroundService
                     await _publisher.BroadcastTradeAsync(trade);
                     // TODO: enqueue to in-memory queue (using channels) to persist asynchronously
                     // so that we don't block streaming of trades to clients
-                    await stockTradeRepo.CreateAsync(trade.ToEntity());
+                    // await stockTradeRepo.CreateAsync(trade.ToEntity());
                     break;
                 case StockQuoteMessage quote:
                     await _publisher.BroadcastQuoteAsync(quote);

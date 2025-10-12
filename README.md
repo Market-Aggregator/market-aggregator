@@ -14,7 +14,6 @@ A real-time market data aggregation platform built with .NET microservices. The 
   <p>
   </p>
 </div>
-
 <!-- ABOUT THE PROJECT -->
 
 ## About The Project

@@ -12,9 +12,9 @@ public sealed class MarketHub : Hub
         _logger = logger;
     }
 
-    public async Task SubscribeToExchangeSymbol(string exchange, string symbol)
+    public async Task SubscribeToTradeExchangeSymbol(string exchange, string symbol)
     {
-        var group = $"{exchange}.{symbol}";
+        var group = $"{MarketEvents.Trade}.{exchange}.{symbol}";
         await Groups.AddToGroupAsync(Context.ConnectionId, group);
         _logger.LogInformation("{ConnectionId} connected to group {Group}", Context.ConnectionId, group);
     }

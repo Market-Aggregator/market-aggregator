@@ -11,6 +11,7 @@ public static class StockQuoteMapping
             Id = Guid.NewGuid(),
             Symbol = stockQuoteMessage.Symbol,
             Timestamp = stockQuoteMessage.Timestamp,
+            AskExchangeCode = stockQuoteMessage.AskExchangeCode,
             AskPrice = stockQuoteMessage.AskPrice,
             AskSize = stockQuoteMessage.AskSize,
             BidExchangeCode = stockQuoteMessage.BidExchangeCode,

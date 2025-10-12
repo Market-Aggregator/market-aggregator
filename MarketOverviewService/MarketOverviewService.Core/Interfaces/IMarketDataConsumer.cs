@@ -4,5 +4,5 @@ namespace MarketOverviewService.Core.Interfaces;
 
 public interface IMarketDataConsumer
 {
-    IAsyncEnumerable<MarketEvent> ConsumeAsync(string exchange, CancellationToken ct);
+    IAsyncEnumerable<MarketEvent> ConsumeAsync(IEnumerable<string> topics, CancellationToken ct);
 }

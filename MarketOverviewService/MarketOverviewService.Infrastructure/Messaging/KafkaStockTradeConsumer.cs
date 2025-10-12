@@ -36,21 +36,40 @@ public class KafkaStockTradeConsumer : IMarketDataConsumer
             EnableAutoCommit = true
         };
 
-        _consumer = new ConsumerBuilder<string, string>(config).Build();
+        _consumer = new ConsumerBuilder<string, string>(config).SetPartitionsAssignedHandler((c, partitions) =>
+            {
+                _logger.LogInformation("✅ Partitions assigned: {Partitions}", 
+                    string.Join(", ", partitions.Select(p => $"{p.Topic}[{p.Partition.Value}]")));
+            })
+            .SetPartitionsRevokedHandler((c, partitions) =>
+            {
+                _logger.LogInformation("⚠️ Partitions revoked: {Partitions}", 
+                    string.Join(", ", partitions.Select(p => $"{p.Topic}[{p.Partition.Value}]")));
+            }).Build();
     }
 
-    public async IAsyncEnumerable<MarketEvent> ConsumeAsync(string exchange, [EnumeratorCancellation] CancellationToken ct)
+    public async IAsyncEnumerable<MarketEvent> ConsumeAsync(IEnumerable<string> topics, [EnumeratorCancellation] CancellationToken ct)
     {
-        _consumer.Subscribe(exchange);
-        _logger.LogInformation("Kafka Consumer started and subscribed to topic: {Topic}", exchange);
+        _consumer.Subscribe(topics);
+        _logger.LogInformation("🟢 Subscribed to topics: {Topics}", string.Join(", ", topics));
+        _logger.LogInformation("🧩 Consumer GroupId: {GroupId}", _kafkaSettings.GroupId);
 
         while (!ct.IsCancellationRequested)
         {
             var message = _consumer.Consume(ct);
             if (message is null || string.IsNullOrWhiteSpace(message.Message?.Value)) continue;
+            
+            _logger.LogInformation("📩 Message received on topic '{Topic}' partition {Partition} @ offset {Offset}",
+                message.Topic, message.Partition.Value, message.Offset.Value);
 
             var messageJson = JObject.Parse(message.Message.Value);
-            if (!Enum.TryParse<MarketEvents>((string)messageJson["Event"]!, out var eventType)) continue;
+            if (!Enum.TryParse<MarketEvents>((string)messageJson["Event"]!, ignoreCase: true, out var eventType))
+            {
+                _logger.LogWarning("⚠️ Unknown event type in message: {Message}", message.Message.Value);
+                continue;
+            }
+            
+            _logger.LogInformation("Event type parsed: {EventType}", eventType);
 
             MarketEvent? marketEvent = null;
             if (eventType == MarketEvents.Trade)
