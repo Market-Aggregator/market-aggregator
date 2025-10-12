@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MarketOverviewService.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250819151004_InitialCreate")]
+    [Migration("20251012155135_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -25,13 +25,52 @@ namespace MarketOverviewService.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("MarketOverviewService.Core.Entities.StockTrade", b =>
+            modelBuilder.Entity("MarketOverviewService.Core.Entities.StockQuote", b =>
                 {
-                    b.Property<long>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AskExchangeCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("AskPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<long>("AskSize")
                         .HasColumnType("bigint");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+                    b.Property<string>("BidExchangeCode")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("BidPrice")
+                        .HasColumnType("numeric");
+
+                    b.Property<long>("BidSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Currency")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Symbol")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("Timestamp")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("StockQuotes");
+                });
+
+            modelBuilder.Entity("MarketOverviewService.Core.Entities.StockTrade", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
                     b.Property<string>("ExchangeCode")
                         .IsRequired()
