@@ -1,8 +1,8 @@
-using System.Text.Json;
-
 using MarketFeedService.Core.Entities.DataEntities;
 using MarketFeedService.Core.Entities.Enums;
 using MarketFeedService.Core.Interfaces;
+
+using Newtonsoft.Json;
 
 namespace MarketFeedService.Worker.Workers;
 
@@ -33,7 +33,7 @@ public class AlpacaTestMarketWorker : BackgroundService
 
         await foreach (var ev in _marketClient.StreamAsync(stoppingToken))
         {
-            var eventJson = JsonSerializer.Serialize(ev);
+            var eventJson = JsonConvert.SerializeObject(ev);
 
             // One topic per exchange, using Symbol as the Key ensures same symbol goes to same partition within the topic
             switch (ev)
@@ -41,7 +41,7 @@ public class AlpacaTestMarketWorker : BackgroundService
                 case StockTradeMessage trade:
                     string topic = $"{MarketEvents.Trade}.{trade.ExchangeCode}";
                     await _producer.ProduceAsync(topic, trade.Symbol, eventJson, stoppingToken);
-                    _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", trade.ExchangeCode);
+                    _logger.LogInformation("Produced trade event to Kafka topic: {Topic}", topic);
                     break;
                 case StockQuoteMessage quote:
                     await _producer.ProduceAsync(MarketEvents.Quote.ToString(), quote.Symbol, eventJson, stoppingToken);
