@@ -26,6 +26,8 @@ builder.Services.AddHostedService<AlpacaTestMarketConsumerWorker>();
 
 builder.Services.AddSingleton<IPublisher, SignalRPublisher>();
 
+// builder.WebHost.UseUrls("http://localhost:5098", "https://localhost:7174");
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -34,7 +36,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-// app.UseHttpsRedirection();
+app.UseHttpsRedirection();
 app.UseCors("AllowFrontendLocalDev");
 
 app.MapHub<MarketHub>("/stock");
