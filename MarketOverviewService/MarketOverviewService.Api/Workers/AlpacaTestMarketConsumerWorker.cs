@@ -47,17 +47,15 @@ public class AlpacaTestMarketConsumerWorker : BackgroundService
 
                 switch (marketEvent)
                 {
-                    // TODO: see if we can use types in case statements
-                    // case MarketEvents.Trade:
                     case StockTradeMessage trade:
                         await _publisher.BroadcastTradeAsync(trade);
                         // TODO: enqueue to in-memory queue (using channels) to persist asynchronously
                         // so that we don't block streaming of trades to clients
-                        // await stockTradeRepo.CreateAsync(trade.ToEntity());
+                        await stockTradeRepo.CreateAsync(trade.ToEntity());
                         break;
                     case StockQuoteMessage quote:
                         await _publisher.BroadcastQuoteAsync(quote);
-                        // await stockQuoteRepo.CreateAsync(quote.ToEntity());
+                        await stockQuoteRepo.CreateAsync(quote.ToEntity());
                         break;
                     default:
                         _logger.LogWarning("Unknown Market Event {MarketEvent}", marketEvent.ToString());
